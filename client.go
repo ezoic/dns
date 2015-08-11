@@ -9,8 +9,8 @@ import (
 	"time"
 )
 
-const dnsTimeout time.Duration = 10 * time.Minute
-const tcpIdleTimeout time.Duration = 10 * time.Minute
+const dnsTimeout time.Duration = 2 * time.Second
+const tcpIdleTimeout time.Duration = 8 * time.Second
 
 // A Conn represents a connection to a DNS server.
 type Conn struct {
@@ -47,7 +47,7 @@ type Client struct {
 //
 func Exchange(m *Msg, a string) (r *Msg, err error) {
 	var co *Conn
-	co, err = DialTimeout("udp", a, dnsTimeout)
+	co, err = DialTimeout("tcp", a, dnsTimeout)
 	if err != nil {
 		return nil, err
 	}
