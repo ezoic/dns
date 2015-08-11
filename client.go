@@ -47,7 +47,7 @@ type Client struct {
 //
 func Exchange(m *Msg, a string) (r *Msg, err error) {
 	var co *Conn
-	co, err = DialTimeout("tcp", a, dnsTimeout)
+	co, err = DialTimeout("udp", a, dnsTimeout)
 	if err != nil {
 		return nil, err
 	}
