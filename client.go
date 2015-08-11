@@ -9,8 +9,8 @@ import (
 	"time"
 )
 
-const dnsTimeout time.Duration = 60 * time.Second
-const tcpIdleTimeout time.Duration = 90 * time.Second
+const dnsTimeout time.Duration = 10 * time.Minute
+const tcpIdleTimeout time.Duration = 10 * time.Minute
 
 // A Conn represents a connection to a DNS server.
 type Conn struct {
