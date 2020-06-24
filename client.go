@@ -128,6 +128,57 @@ func (c *Client) Exchange(m *Msg, a string) (r *Msg, rtt time.Duration, err erro
 	return r, rtt, nil
 }
 
+// ExchangeTCP does the same thing as Exchange but uses TCP.
+func (c *Client) ExchangeTCP(m *Msg, a string) (r *Msg, rtt time.Duration, err error) {
+	if !c.SingleInflight {
+		return c.exchangeTCP(m, a)
+	}
+	t := "nop"
+	if t1, ok := TypeToString[m.Question[0].Qtype]; ok {
+		t = t1
+	}
+	cl := "nop"
+	if cl1, ok := ClassToString[m.Question[0].Qclass]; ok {
+		cl = cl1
+	}
+	r, rtt, err, shared := c.group.Do(m.Question[0].Name+t+cl, func() (*Msg, time.Duration, error) {
+		return c.exchangeTCP(m, a)
+	})
+	if err != nil {
+		return r, rtt, err
+	}
+	if shared {
+		return r.Copy(), rtt, nil
+	}
+	return r, rtt, nil
+}
+
+func (c *Client) exchangeTCP(m *Msg, a string) (r *Msg, rtt time.Duration, err error) {
+ 	var co *Conn
+ 	if c.Net == "" || c.Net == "udp" {
+ 		co, err = DialTimeout("tcp", a, c.dialTimeout())
+	} else {
+		co, err = DialTimeout(c.Net, a, c.dialTimeout())
+	}
+	if err != nil {
+		return nil, 0, err
+	}
+	defer co.Close()
+
+	co.SetReadDeadline(time.Now().Add(c.readTimeout()))
+	co.SetWriteDeadline(time.Now().Add(c.writeTimeout()))
+
+	co.TsigSecret = c.TsigSecret
+	if err = co.WriteMsg(m); err != nil {
+		return nil, 0, err
+	}
+	r, err = co.ReadMsg()
+	if err == nil && r.Id != m.Id {
+		err = ErrId
+	}
+	return r, co.rtt, err
+}
+
 func (c *Client) dialTimeout() time.Duration {
 	if c.DialTimeout != 0 {
 		return c.DialTimeout
